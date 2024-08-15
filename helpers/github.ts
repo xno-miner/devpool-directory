@@ -418,7 +418,6 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
 export async function handleDevPoolIssue(
   projectIssues: GitHubIssue[],
   projectIssue: GitHubIssue,
-  projectUrl: string,
   devpoolIssue: GitHubIssue,
   isFork: boolean
 ) {
