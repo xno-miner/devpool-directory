@@ -44,40 +44,20 @@ async function main() {
   const allProjectIssues: GitHubIssue[] = [];
 
   const isFork = await checkIfForked(DEVPOOL_OWNER_NAME);
+  // get all project issues (opened and closed)
+  const projectIssues: GitHubIssue[] = await getAllIssues(DEVPOOL_OWNER_NAME, DEVPOOL_REPO_NAME);
+  // aggregate all project issues
+  allProjectIssues.push(...projectIssues);
+  // for all issues
+  for (const projectIssue of projectIssues) {
+    // if issue exists in devpool
+    const devpoolIssue = projectIssue;
 
-  // for each project URL
-  for (const projectUrl of projectUrls) {
-    // get owner and repository names from project URL
-    const [ownerName, repoName] = getRepoCredentials(projectUrl);
-    // get all project issues (opened and closed)
-    const projectIssues: GitHubIssue[] = await getAllIssues(ownerName, repoName);
-    // aggregate all project issues
-    allProjectIssues.push(...projectIssues);
-    // for all issues
-    for (const projectIssue of projectIssues) {
-      // if issue exists in devpool
-      const devpoolIssue = getIssueByLabel(devpoolIssues, `id: ${projectIssue.node_id}`);
-
-      // adding www creates a link to an issue that does not count as a mention
-      // helps with preventing a mention in partner's repo especially during testing
-      const body = isFork ? projectIssue.html_url.replace("https://github.com", "https://www.github.com") : projectIssue.html_url;
-
-      // for all issues
-      if (devpoolIssue) {
-        // if it exists in the devpool, then update it
-        await handleDevPoolIssue(projectIssues, projectIssue, projectUrl, devpoolIssue, isFork);
-      } else {
-        // if it doesn't exist in the devpool, then create it
-        await createDevPoolIssue(projectIssue, projectUrl, body, twitterMap);
-      }
-    }
+    // adding www creates a link to an issue that does not count as a mention
+    // helps with preventing a mention in partner's repo especially during testing
+    const body = isFork ? projectIssue.html_url.replace("https://github.com", "https://www.github.com") : projectIssue.html_url;
+    await handleDevPoolIssue(projectIssues, projectIssue, projectUrl, devpoolIssue, isFork);
   }
-
-  // Calculate total rewards from devpool issues
-  const { rewards, tasks } = await calculateStatistics(await getAllIssues(DEVPOOL_OWNER_NAME, DEVPOOL_REPO_NAME));
-  const statistics: Statistics = { rewards, tasks };
-
-  await writeTotalRewardsToGithub(statistics);
 }
 
 void (async () => {
