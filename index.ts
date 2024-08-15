@@ -56,7 +56,7 @@ async function main() {
     // adding www creates a link to an issue that does not count as a mention
     // helps with preventing a mention in partner's repo especially during testing
     const body = isFork ? projectIssue.html_url.replace("https://github.com", "https://www.github.com") : projectIssue.html_url;
-    await handleDevPoolIssue(projectIssues, projectIssue, projectUrl, devpoolIssue, isFork);
+    await handleDevPoolIssue(projectIssues, projectIssue, devpoolIssue, isFork);
   }
 }
 
