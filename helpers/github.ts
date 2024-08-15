@@ -515,3 +515,7 @@ async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: Git
 
   return newState;
 }
+
+function areEqual(a: string[], b: string[]) {
+  return a.sort().join(",") === b.sort().join(",");
+}
