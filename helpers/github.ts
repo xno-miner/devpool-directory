@@ -428,6 +428,15 @@ export async function handleDevPoolIssue(
   const hasChanges = !areEqual(originals, labelRemoved);
   const hasNoPriceLabels = !(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE));
 
+  const metaChanges = {
+    // the title of the issue has changed
+    title: devpoolIssue.title != projectIssue.title,
+    // the issue url has updated
+    body: !isFork && devpoolIssue.body != projectIssue.html_url,
+    // the price/priority labels have changed
+    labels: hasChanges,
+  };
+
   const newState = await applyStateChanges(projectIssues, projectIssue, devpoolIssue, hasNoPriceLabels);
 
   await applyUnavailableLabelToDevpoolIssue(
