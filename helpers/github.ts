@@ -428,55 +428,7 @@ export async function handleDevPoolIssue(
   const hasChanges = !areEqual(originals, labelRemoved);
   const hasNoPriceLabels = !(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE));
 
-  const metaChanges = {
-    // the title of the issue has changed
-    title: devpoolIssue.title != projectIssue.title,
-    // the issue url has updated
-    body: !isFork && devpoolIssue.body != projectIssue.html_url,
-    // the price/priority labels have changed
-    labels: hasChanges,
-  };
-
   const newState = await applyStateChanges(projectIssues, projectIssue, devpoolIssue, hasNoPriceLabels);
-
-  await applyUnavailableLabelToDevpoolIssue(
-    projectIssue,
-    devpoolIssue,
-    metaChanges,
-    labelRemoved,
-    originals,
-    newState ?? (devpoolIssue.state as "open" | "closed")
-  );
-}
-
-async function applyMetaChanges(
-  metaChanges: { title: boolean; body: boolean; labels: boolean },
-  devpoolIssue: GitHubIssue,
-  projectIssue: GitHubIssue,
-  isFork: boolean,
-  labelRemoved: string[],
-  originals: string[]
-) {
-  const shouldUpdate = metaChanges.title || metaChanges.body || metaChanges.labels;
-
-  if (shouldUpdate) {
-    try {
-      await octokit.rest.issues.update({
-        owner: DEVPOOL_OWNER_NAME,
-        repo: DEVPOOL_REPO_NAME,
-        issue_number: devpoolIssue.number,
-        title: metaChanges.title ? projectIssue.title : devpoolIssue.title,
-        body: metaChanges.body && !isFork ? projectIssue.html_url : projectIssue.html_url.replace("https://", "https://www."),
-        labels: metaChanges.labels ? labelRemoved : originals,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-
-    if (metaChanges.title || metaChanges.body || metaChanges.labels) {
-      console.log(`Updated metadata: ${devpoolIssue.html_url} (${projectIssue.html_url})`);
-    }
-  }
 }
 
 async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: GitHubIssue, devpoolIssue: GitHubIssue, hasNoPriceLabels: boolean) {
