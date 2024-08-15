@@ -422,10 +422,6 @@ export async function handleDevPoolIssue(
   devpoolIssue: GitHubIssue,
   isFork: boolean
 ) {
-  // remove the unavailable label as getDevpoolIssueLabels() adds it and statitics rely on it
-  const labelRemoved = getDevpoolIssueLabels(projectIssue, projectUrl).filter((label) => label != LABELS.UNAVAILABLE);
-  const originals = devpoolIssue.labels.map((label) => (label as GitHubLabel).name);
-  const hasChanges = !areEqual(originals, labelRemoved);
   const hasNoPriceLabels = !(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE));
 
   const newState = await applyStateChanges(projectIssues, projectIssue, devpoolIssue, hasNoPriceLabels);
@@ -433,58 +429,11 @@ export async function handleDevPoolIssue(
 
 async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: GitHubIssue, devpoolIssue: GitHubIssue, hasNoPriceLabels: boolean) {
   const stateChanges: StateChanges = {
-    // missing in the partners
-    forceMissing_Close: {
-      cause: !projectIssues.some((projectIssue) => projectIssue.node_id === getIssueLabelValue(devpoolIssue, "id:")),
-      effect: "closed",
-      comment: "Closed (missing in partners)",
-    },
     // no price labels set and open in the devpool
     noPriceLabels_Close: {
       cause: hasNoPriceLabels && devpoolIssue.state === "open",
       effect: "closed",
       comment: "Closed (no price labels)",
-    },
-    // it's closed, been merged and still open in the devpool
-    issueComplete_Close: {
-      cause: projectIssue.state === "closed" && devpoolIssue.state === "open" && !!projectIssue.pull_request?.merged_at,
-      effect: "closed",
-      comment: "Closed (merged)",
-    },
-    // it's closed, assigned and still open in the devpool
-    issueAssignedClosed_Close: {
-      cause: projectIssue.state === "closed" && devpoolIssue.state === "open" && !!projectIssue.assignee?.login,
-      effect: "closed",
-      comment: "Closed (assigned-closed)",
-    },
-    // it's closed, not merged and still open in the devpool
-    issueClosed_Close: {
-      cause: projectIssue.state === "closed" && devpoolIssue.state === "open",
-      effect: "closed",
-      comment: "Closed (not merged)",
-    },
-    // it's open, assigned and still open in the devpool
-    issueAssignedOpen_Close: {
-      cause: projectIssue.state === "open" && devpoolIssue.state === "open" && !!projectIssue.assignee?.login,
-      effect: "closed",
-      comment: "Closed (assigned-open)",
-    },
-    // it's open, merged, unassigned, has price labels and is closed in the devpool
-    issueReopenedMerged_Open: {
-      cause:
-        projectIssue.state === "open" &&
-        devpoolIssue.state === "closed" &&
-        !!projectIssue.pull_request?.merged_at &&
-        !hasNoPriceLabels &&
-        !projectIssue.assignee?.login,
-      effect: "open",
-      comment: "Reopened (merged)",
-    },
-    // it's open, unassigned, has price labels and is closed in the devpool
-    issueUnassigned_Open: {
-      cause: projectIssue.state === "open" && devpoolIssue.state === "closed" && !projectIssue.assignee?.login && !hasNoPriceLabels,
-      effect: "open",
-      comment: "Reopened (unassigned)",
     },
   };
 
